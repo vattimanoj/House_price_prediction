@@ -170,6 +170,6 @@ This app is configured for deployment on platforms that support `Procfile`-based
 
 ## 🌐 Live Demo
 
-> 🔗 **Deployment Link:** _[Add your live deployment URL here once deployed]_
+> 🔗 **Deployment Link:** https://house-price-prediction-5i63.onrender.com
 
 
