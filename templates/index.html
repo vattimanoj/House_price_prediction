@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Value Estimator</title>
+<style>
+  :root{
+    --blue-deep:   #14336B;
+    --blue-mid:    #1D4C8C;
+    --blue-soft:   #E9F0FB;
+    --paper:       #FFFFFF;
+    --bg-top:      #F6F8FC;
+    --ink:         #16233D;
+    --muted:       #64708A;
+    --border:      #E2E7F0;
+    --brass:       #E0A339;
+    --brass-dark:  #B87F1E;
+    --err:         #D2503A;
+    --err-bg:      #FCEBE7;
+    --ok-bg:       #FFF6E6;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    background: linear-gradient(180deg, var(--bg-top) 0%, #EEF2F9 100%);
+    color:var(--ink);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+
+  a{ color:var(--blue-mid); }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding: 48px 24px 72px;
+  }
+
+  /* Header */
+  header.hero{
+    text-align:center;
+    max-width:620px;
+    margin:0 auto 40px;
+  }
+  .eyebrow{
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--brass-dark);
+    margin-bottom:12px;
+  }
+  h1{
+    font-weight:800;
+    font-size: clamp(30px, 4vw, 42px);
+    letter-spacing:-0.02em;
+    margin:0 0 14px;
+    color:var(--blue-deep);
+    line-height:1.15;
+  }
+  .subhead{
+    font-size:16px;
+    color:var(--muted);
+    line-height:1.6;
+    margin:0;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns: 0.85fr 1fr;
+    gap: 28px;
+    align-items:start;
+  }
+  @media (max-width: 900px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  /* Shared card look */
+  .card{
+    background:var(--paper);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow: 0 12px 32px rgba(20, 51, 107, 0.08);
+    padding:28px;
+  }
+
+  /* --- Left: friendly summary panel --- */
+  .summary{
+    position:sticky;
+    top:24px;
+  }
+  @media (max-width: 900px){ .summary{ position:static; } }
+
+  .summary h2{
+    font-size:18px;
+    font-weight:700;
+    margin:0 0 6px;
+    color:var(--blue-deep);
+  }
+  .summary .lead{
+    font-size:14px;
+    color:var(--muted);
+    margin:0 0 22px;
+    line-height:1.55;
+  }
+
+  .result-card{
+    margin-top:20px;
+    border-radius:14px;
+    padding:20px 22px;
+    background: var(--ok-bg);
+    border:1px solid #F0DCA8;
+    text-align:center;
+  }
+  .result-card .k{
+    font-size:13px;
+    font-weight:600;
+    color:var(--brass-dark);
+    margin-bottom:6px;
+  }
+  .result-card .v{
+    font-weight:800;
+    font-size: clamp(28px, 3.2vw, 34px);
+    color:var(--blue-deep);
+  }
+  .result-card .v::before{ content:"$"; color:var(--brass-dark); }
+  .result-card .foot{
+    margin-top:6px;
+    font-size:12.5px;
+    color:var(--muted);
+  }
+
+  .error-card{
+    margin-top:20px;
+    border-radius:14px;
+    padding:18px 20px;
+    background:var(--err-bg);
+    border:1px solid #F3C4B8;
+  }
+  .error-card .k{
+    display:block;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--err);
+    margin-bottom:6px;
+  }
+  .error-card .msg{
+    font-size:14px;
+    color:#7A3324;
+    line-height:1.5;
+  }
+
+  .trust-note{
+    margin-top:22px;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    font-size:12.5px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+  .trust-note .icon{
+    flex:0 0 auto;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:var(--blue-soft);
+    color:var(--blue-mid);
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px;
+    font-weight:700;
+  }
+
+  /* --- Right: form card --- */
+  .form-card h2{
+    font-size:20px;
+    font-weight:700;
+    margin:0 0 4px;
+    color:var(--blue-deep);
+  }
+  .form-card .lead{
+    font-size:14px;
+    color:var(--muted);
+    margin:0 0 24px;
+  }
+
+  fieldset{
+    border:0;
+    padding:0;
+    margin:0 0 26px;
+  }
+  fieldset legend{
+    font-size:13px;
+    font-weight:700;
+    color:var(--blue-mid);
+    padding:0 0 12px;
+    width:100%;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:16px;
+  }
+  .grid.cols-2{ grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 520px){
+    .grid, .grid.cols-2{ grid-template-columns: 1fr 1fr; }
+  }
+
+  .field{ display:flex; flex-direction:column; gap:7px; }
+  .field.span-2{ grid-column: span 2; }
+  .field label{
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .field .help{
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:-3px;
+  }
+  .field input,
+  .field select{
+    font-family:var(--sans);
+    font-size:15px;
+    padding:11px 13px;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    background:#FBFCFE;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .field input:hover, .field select:hover{ border-color:#C7D2E6; }
+  .field input:focus, .field select:focus{
+    border-color:var(--blue-mid);
+    background:#fff;
+    box-shadow:0 0 0 4px rgba(29,76,140,0.12);
+  }
+  .field select{ cursor:pointer; }
+
+  .submit-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-top:8px;
+    padding-top:22px;
+    border-top:1px solid var(--border);
+  }
+  .submit-row .hint{
+    font-size:12.5px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+
+  button.run{
+    font-family:var(--sans);
+    font-size:15px;
+    font-weight:700;
+    background:var(--blue-deep);
+    color:#fff;
+    border:1px solid var(--blue-deep);
+    padding:14px 26px;
+    border-radius:12px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s ease, transform .1s ease, box-shadow .15s ease;
+  }
+  button.run:hover{ background:var(--blue-mid); box-shadow:0 8px 20px rgba(29,76,140,0.28); }
+  button.run:active{ transform:translateY(1px); }
+  button.run:focus-visible{
+    outline:3px solid var(--brass);
+    outline-offset:2px;
+  }
+
+  .footnote{
+    margin-top:32px;
+    font-size:12.5px;
+    color:var(--muted);
+    text-align:center;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Free Instant Estimate</div>
+    <h1>What's your home worth?</h1>
+    <p class="subhead">Answer a few quick questions about the property and get an estimated market value in seconds.</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- LEFT: friendly summary panel -->
+    <div class="card summary">
+      {% if prediction_text %}
+      <div class="result-card">
+        <div class="k">Estimated value</div>
+        <div class="v">{{ prediction_text }}</div>
+        <div class="foot">Based on the details you entered</div>
+      </div>
+      {% endif %}
+
+      {% if error %}
+      <div class="error-card">
+        <span class="k">Something needs your attention</span>
+        <div class="msg">{{ error }}</div>
+      </div>
+      {% endif %}
+
+      <div class="trust-note">
+        <span class="icon">i</span>
+        <span>This estimate comes from a statistical model trained on past home sales. It's a helpful starting point, not a formal appraisal.</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: form card -->
+    <div class="card form-card">
+      <h2>Tell us about the property</h2>
+      <p class="lead">All fields are required to generate an estimate.</p>
+
+      <form action="/predict" method="POST" id="predictForm">
+
+        <fieldset>
+          <legend>Location &amp; sale date</legend>
+          <div class="grid cols-2">
+            <div class="field">
+              <label for="city">City</label>
+              <select id="city" name="city" required>
+                <option value="" disabled selected>Choose a city</option>
+                <option value="Algona">Algona</option>
+                <option value="Auburn">Auburn</option>
+                <option value="Beaux Arts Village">Beaux Arts Village</option>
+                <option value="Bellevue">Bellevue</option>
+                <option value="Black Diamond">Black Diamond</option>
+                <option value="Bothell">Bothell</option>
+                <option value="Burien">Burien</option>
+                <option value="Carnation">Carnation</option>
+                <option value="Clyde Hill">Clyde Hill</option>
+                <option value="Covington">Covington</option>
+                <option value="Des Moines">Des Moines</option>
+                <option value="Duvall">Duvall</option>
+                <option value="Enumclaw">Enumclaw</option>
+                <option value="Fall City">Fall City</option>
+                <option value="Federal Way">Federal Way</option>
+                <option value="Inglewood-Finn Hill">Inglewood-Finn Hill</option>
+                <option value="Issaquah">Issaquah</option>
+                <option value="Kenmore">Kenmore</option>
+                <option value="Kent">Kent</option>
+                <option value="Kirkland">Kirkland</option>
+                <option value="Lake Forest Park">Lake Forest Park</option>
+                <option value="Maple Valley">Maple Valley</option>
+                <option value="Medina">Medina</option>
+                <option value="Mercer Island">Mercer Island</option>
+                <option value="Milton">Milton</option>
+                <option value="Newcastle">Newcastle</option>
+                <option value="Normandy Park">Normandy Park</option>
+                <option value="North Bend">North Bend</option>
+                <option value="Pacific">Pacific</option>
+                <option value="Preston">Preston</option>
+                <option value="Ravensdale">Ravensdale</option>
+                <option value="Redmond">Redmond</option>
+                <option value="Renton">Renton</option>
+                <option value="Sammamish">Sammamish</option>
+                <option value="SeaTac">SeaTac</option>
+                <option value="Seattle">Seattle</option>
+                <option value="Shoreline">Shoreline</option>
+                <option value="Skykomish">Skykomish</option>
+                <option value="Snoqualmie">Snoqualmie</option>
+                <option value="Snoqualmie Pass">Snoqualmie Pass</option>
+                <option value="Tukwila">Tukwila</option>
+                <option value="Vashon">Vashon</option>
+                <option value="Woodinville">Woodinville</option>
+                <option value="Yarrow Point">Yarrow Point</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="country">Country</label>
+              <select id="country" name="country" required>
+                <option value="USA" selected>USA</option>
+              </select>
+            </div>
+            <div class="field span-2">
+              <label for="date">Sale date</label>
+              <input type="date" id="date" name="date" required>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Rooms &amp; layout</legend>
+          <div class="grid">
+            <div class="field">
+              <label for="bedrooms">Bedrooms</label>
+              <input type="number" id="bedrooms" name="bedrooms" min="0" step="1" value="3" required>
+            </div>
+            <div class="field">
+              <label for="bathrooms">Bathrooms</label>
+              <input type="number" id="bathrooms" name="bathrooms" min="0" step="0.25" value="2" required>
+            </div>
+            <div class="field">
+              <label for="floors">Floors</label>
+              <input type="number" id="floors" name="floors" min="1" step="0.5" value="1" required>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Size (square feet)</legend>
+          <div class="grid">
+            <div class="field">
+              <label for="sqft_living">Living area</label>
+              <input type="number" id="sqft_living" name="sqft_living" min="0" value="1800" required>
+            </div>
+            <div class="field">
+              <label for="sqft_lot">Lot size</label>
+              <input type="number" id="sqft_lot" name="sqft_lot" min="0" value="6000" required>
+            </div>
+            <div class="field">
+              <label for="sqft_above">Above ground</label>
+              <input type="number" id="sqft_above" name="sqft_above" min="0" value="1800" required>
+            </div>
+            <div class="field">
+              <label for="sqft_basement">Basement</label>
+              <input type="number" id="sqft_basement" name="sqft_basement" min="0" value="0" required>
+            </div>
+            <div class="field">
+              <label for="yr_built">Year built</label>
+              <input type="number" id="yr_built" name="yr_built" min="1800" max="2026" value="1990" required>
+            </div>
+            <div class="field">
+              <label for="yr_renovated">Year renovated</label>
+              <input type="number" id="yr_renovated" name="yr_renovated" min="0" max="2026" value="0" required>
+              <span class="help">Enter 0 if never renovated</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Condition &amp; features</legend>
+          <div class="grid">
+            <div class="field">
+              <label for="condition">Condition</label>
+              <input type="number" id="condition" name="condition" min="1" max="5" value="3" required>
+              <span class="help">1 = poor, 5 = excellent</span>
+            </div>
+            <div class="field">
+              <label for="view">View rating</label>
+              <input type="number" id="view" name="view" min="0" max="4" value="0" required>
+              <span class="help">0 = none, 4 = exceptional</span>
+            </div>
+            <div class="field">
+              <label for="waterfront">Waterfront</label>
+              <select id="waterfront" name="waterfront" required>
+                <option value="0" selected>No</option>
+                <option value="1">Yes</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="submit-row">
+          <div class="hint">Takes about a minute to fill in.</div>
+          <button type="submit" class="run">Get my estimate →</button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+  <div class="footnote">This tool provides a data-driven estimate only and is not a substitute for a professional home appraisal.</div>
+
+</div>
+
+</body>
+</html>
